@@ -26,13 +26,14 @@ type smtp struct {
 	Port     int    `config:"port"     validate:"required"`
 }
 
-type rabbit struct {
+type rabbitConfig struct {
 	User       string `config:"user"        validate:"required"`
 	Password   string `config:"password"    validate:"required"`
 	Host       string `config:"host"        validate:"required"`
 	Port       int    `config:"port"        validate:"required"`
 	Vhost      string `config:"vhost"       validate:"required"`
 	Queue      string `config:"queue"       validate:"required"`
+	QueueDLX   string `config:"queue_dlx"   validate:"required"`
 	MaxRetries int64  `config:"max_retries" validate:"required"`
 }
 
@@ -63,14 +64,14 @@ type minioConfig struct {
 }
 
 type configurations struct {
-	Sender   sender      `config:"sender"   validate:"required"`
-	SMTP     smtp        `config:"smtp"     validate:"required"`
-	Rabbit   rabbit      `config:"rabbit"   validate:"required"`
-	Buffer   buffer      `config:"buffer"   validate:"required"`
-	Timeout  int         `config:"timeout"  validate:"required"`
-	Cache    cacheConfig `config:"cache"    validate:"required"`
-	Template cacheConfig `config:"template" validate:"required"`
-	Minio    minioConfig `config:"minio"    validate:"required"`
+	Sender   sender       `config:"sender"   validate:"required"`
+	SMTP     smtp         `config:"smtp"     validate:"required"`
+	Rabbit   rabbitConfig `config:"rabbit"   validate:"required"`
+	Buffer   buffer       `config:"buffer"   validate:"required"`
+	Timeout  int          `config:"timeout"  validate:"required"`
+	Cache    cacheConfig  `config:"cache"    validate:"required"`
+	Template cacheConfig  `config:"template" validate:"required"`
+	Minio    minioConfig  `config:"minio"    validate:"required"`
 }
 
 //nolint:gomnd
@@ -79,7 +80,7 @@ func defaultConfigurations() configurations {
 		SMTP: smtp{
 			Port: 587,
 		},
-		Rabbit: rabbit{
+		Rabbit: rabbitConfig{
 			Port:       5672,
 			Vhost:      "/",
 			MaxRetries: 4,

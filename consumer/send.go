@@ -6,14 +6,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	htmplate "html/template"
+	htmltemplate "html/template"
 	"log"
 	"regexp"
 	"time"
 
 	"github.com/microcosm-cc/bluemonday"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/russross/blackfriday/v2"
+	"github.com/thiago-felipe-99/mail/rabbit"
 	"github.com/wneessen/go-mail"
 )
 
@@ -38,7 +38,7 @@ type email struct {
 	Attachments     []string   `json:"attachments"`
 	contentType     mail.ContentType
 	attachmentsSize int
-	messageQueue    amqp.Delivery
+	messageQueue    rabbit.Message
 	messageMail     *mail.Msg
 	error           error
 }
@@ -83,7 +83,7 @@ func newSend(
 	}
 }
 
-func proccessQueue(queue []amqp.Delivery) ([]email, []email) {
+func proccessQueue(queue []rabbit.Message) ([]email, []email) {
 	ready, failed := []email{}, []email{}
 
 	for _, message := range queue {
@@ -112,7 +112,7 @@ func getTemplateHTML(template template, cache *templateCache) (string, error) {
 
 	rawHTML := blackfriday.Run(markdown)
 
-	regex := regexp.MustCompile(`({{)( *)(\w+)( *)(}})`)
+	regex := regexp.MustCompile(`({{)( *)((\w|\d)+)( *)(}})`)
 
 	keys := regex.FindAll(rawHTML, -1)
 	for _, rawKey := range keys {
@@ -122,9 +122,9 @@ func getTemplateHTML(template template, cache *templateCache) (string, error) {
 		}
 	}
 
-	replaceHTML := regex.ReplaceAll(rawHTML, []byte("$1 index . \"$3\" $5"))
+	replaceHTML := regex.ReplaceAll(rawHTML, []byte("$1 index . \"$3\" $6"))
 
-	templateHTML, err := htmplate.New("template").Parse(string(replaceHTML))
+	templateHTML, err := htmltemplate.New("template").Parse(string(replaceHTML))
 	if err != nil {
 		return "", fmt.Errorf("erro parsing HTML: %w", err)
 	}
@@ -258,9 +258,9 @@ func sendEmails(smtp *smtp, ready, failed []email) ([]email, []email) {
 
 	err = client.Send(messages...)
 	if err != nil {
-		for index, email := range ready {
-			if email.messageMail.HasSendError() {
-				ready[index].error = email.messageMail.SendError()
+		for index := len(ready) - 1; index >= 0; index-- {
+			if ready[index].messageMail.HasSendError() {
+				ready[index].error = ready[index].messageMail.SendError()
 				ready, failed = emailFailed(index, ready, failed)
 			}
 		}
@@ -359,7 +359,7 @@ func setMetrics(metrics *metrics, timeInit time.Time, ready, failed []email, max
 	metrics.emailsSentTimeSeconds.Observe(time.Since(timeInit).Seconds())
 }
 
-func (send *send) emails(queue []amqp.Delivery) {
+func (send *send) emails(queue []rabbit.Message) {
 	timeInit := time.Now()
 
 	ready, failed := proccessQueue(queue)
@@ -379,8 +379,8 @@ func (send *send) emails(queue []amqp.Delivery) {
 	setMetrics(send.metrics, timeInit, ready, failed, send.maxReties)
 }
 
-func (send *send) copyQueueAndSendEmails(queue []amqp.Delivery) []amqp.Delivery {
-	buffer := make([]amqp.Delivery, len(queue))
+func (send *send) copyQueueAndSendEmails(queue []rabbit.Message) []rabbit.Message {
+	buffer := make([]rabbit.Message, len(queue))
 	copy(buffer, queue)
 
 	log.Printf("[INFO] - Sending %d emails", len(buffer))

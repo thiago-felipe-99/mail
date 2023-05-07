@@ -5,95 +5,72 @@ import (
 	"log"
 	"time"
 
-	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/thiago-felipe-99/mail/rabbit"
 )
 
-func newRabbit(configs *configurations) (<-chan amqp.Delivery, func(), error) {
-	rabbitURL := fmt.Sprintf(
-		"amqp://%s:%s@%s:%d/%s",
-		configs.Rabbit.User,
-		configs.Rabbit.Password,
-		configs.Rabbit.Host,
-		configs.Rabbit.Port,
-		configs.Rabbit.Vhost,
-	)
-
-	rabbit, err := amqp.Dial(rabbitURL)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error connecting to RabbitMQ: %w", err)
+func newRabbit(configs *configurations) *rabbit.Rabbit {
+	config := rabbit.Config{
+		User:     configs.Rabbit.User,
+		Password: configs.Rabbit.Password,
+		Host:     configs.Rabbit.Host,
+		Port:     fmt.Sprint(configs.Rabbit.Port),
+		Vhost:    configs.Rabbit.Vhost,
 	}
 
-	channel, err := rabbit.Channel()
-	if err != nil {
-		rabbit.Close()
+	rabbit := rabbit.New(config)
 
-		return nil, nil, fmt.Errorf("error opening RabbitMQ channel: %w", err)
+	return rabbit
+}
+
+func consumeMessages(rabbit *rabbit.Rabbit, configs *configurations, queue chan<- rabbit.Message) {
+	sleep := time.Second
+
+	for {
+		log.Printf("[INFO] - Creating the consumer")
+
+		err := rabbit.CreateQueueWithDLX(
+			configs.Rabbit.Queue,
+			configs.Rabbit.QueueDLX,
+			configs.Rabbit.MaxRetries,
+		)
+		if err != nil {
+			log.Printf("[ERROR] - Erro creating consumer: %s", err)
+
+			time.Sleep(sleep)
+			sleep *= 2
+
+			continue
+		}
+
+		sleep = time.Second
+
+		messages, err := rabbit.Consume(
+			configs.Rabbit.Queue,
+			configs.Buffer.Size*configs.Buffer.Quantity,
+		)
+		if err != nil {
+			log.Printf("[ERROR] - Error consuming the queue: %s", err)
+
+			continue
+		}
+
+		log.Printf("[INFO] - Consuming the queue")
+
+		for message := range messages {
+			queue <- message
+		}
+
+		log.Printf("[INFO] - The queue was closed, restarting the consumer")
 	}
-
-	closeRabbit := func() {
-		channel.Close()
-		rabbit.Close()
-	}
-
-	dlx := configs.Rabbit.Queue + "-dlx"
-	queueArgs := amqp.Table{}
-	queueArgs["x-dead-letter-exchange"] = dlx
-	queueArgs["x-dead-letter-routing-key"] = "dead-message"
-	queueArgs["x-queue-type"] = "quorum"
-	queueArgs["x-delivery-limit"] = configs.Rabbit.MaxRetries
-
-	_, err = channel.QueueDeclare(configs.Rabbit.Queue, true, false, false, false, queueArgs)
-	if err != nil {
-		closeRabbit()
-
-		return nil, nil, fmt.Errorf("error declaring RabbitMQ queue: %w", err)
-	}
-
-	_, err = channel.QueueDeclare(dlx, true, false, false, false, nil)
-	if err != nil {
-		closeRabbit()
-
-		return nil, nil, fmt.Errorf("error declaring RabbitMQ dlx queue: %w", err)
-	}
-
-	err = channel.ExchangeDeclare(dlx, "direct", true, false, false, false, nil)
-	if err != nil {
-		closeRabbit()
-
-		return nil, nil, fmt.Errorf("error declaring RabbitMQ dlx exchange: %w", err)
-	}
-
-	err = channel.QueueBind(dlx, "dead-message", dlx, false, nil)
-	if err != nil {
-		closeRabbit()
-
-		return nil, nil, fmt.Errorf("error binding dlx queue with dlx exchange: %w", err)
-	}
-
-	err = channel.Qos(configs.Buffer.Size*configs.Buffer.Quantity, 0, false)
-	if err != nil {
-		closeRabbit()
-
-		return nil, nil, fmt.Errorf("error configuring consumer queue size: %w", err)
-	}
-
-	queue, err := channel.Consume(configs.Rabbit.Queue, "", false, false, false, false, nil)
-	if err != nil {
-		closeRabbit()
-
-		return nil, nil, fmt.Errorf("error registering consumer: %w", err)
-	}
-
-	return queue, closeRabbit, nil
 }
 
 func getMessages(
-	queue <-chan amqp.Delivery,
+	queue <-chan rabbit.Message,
 	send *send,
 	timeout time.Duration,
 	bufferSize int,
 ) {
-	buffer := []amqp.Delivery{}
+	buffer := []rabbit.Message{}
 	ticker := time.NewTicker(timeout)
 
 	for {
@@ -155,17 +132,25 @@ func main() {
 
 	template.setAll()
 
-	queue, closeRabbit, err := newRabbit(configs)
-	if err != nil {
-		log.Printf("[ERROR] - Error creating queue: %s", err)
+	queue := make(chan rabbit.Message)
 
-		return
-	}
+	rabbit := newRabbit(configs)
 
-	defer closeRabbit()
+	go rabbit.HandleConnection()
+
+	go consumeMessages(rabbit, configs, queue)
+
+	defer rabbit.Close()
 
 	metrics := newMetrics()
-	send := newSend(cache, template, &configs.Sender, &configs.SMTP, metrics, configs.Rabbit.MaxRetries)
+	send := newSend(
+		cache,
+		template,
+		&configs.Sender,
+		&configs.SMTP,
+		metrics,
+		configs.Rabbit.MaxRetries,
+	)
 	timeout := time.Duration(configs.Timeout) * time.Second
 
 	var wait chan struct{}

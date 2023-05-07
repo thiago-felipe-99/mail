@@ -1,0 +1,1135 @@
+basePath: /
+definitions:
+  controllers.sent:
+    properties:
+      message:
+        type: string
+    type: object
+  model.Email:
+    properties:
+      attachments:
+        items:
+          type: string
+        type: array
+      blindReceivers:
+        items:
+          $ref: '#/definitions/model.Receiver'
+        type: array
+      emailLists:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      message:
+        type: string
+      receivers:
+        items:
+          $ref: '#/definitions/model.Receiver'
+        type: array
+      sentAt:
+        type: string
+      subject:
+        type: string
+      template:
+        $ref: '#/definitions/model.TemplateData'
+      userId:
+        type: string
+    type: object
+  model.Queue:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: string
+      deletedAt:
+        type: string
+      deletedBy:
+        type: string
+      dlx:
+        type: string
+      id:
+        type: string
+      maxRetries:
+        type: integer
+      name:
+        type: string
+    type: object
+  model.QueuePartial:
+    properties:
+      maxRetries:
+        minimum: 1
+        type: integer
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  model.Receiver:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+    required:
+    - email
+    - name
+    type: object
+  model.RolePartial:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  model.Template:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: string
+      deletedAt:
+        type: string
+      deletedBy:
+        type: string
+      fields:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      name:
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
+      template:
+        type: string
+    type: object
+  model.TemplateData:
+    properties:
+      data:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  model.TemplatePartial:
+    properties:
+      name:
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
+      template:
+        type: string
+    required:
+    - name
+    - template
+    type: object
+  model.UserPartial:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/model.UserRole'
+        type: array
+    required:
+    - email
+    - name
+    - password
+    type: object
+  model.UserRole:
+    properties:
+      isAdmin:
+        type: boolean
+      isProtected:
+        type: boolean
+      name:
+        type: string
+    type: object
+  model.UserSessionPartial:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+    required:
+    - password
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: This is an api that publishes emails in RabbitMQ.
+  title: Publisher Emails
+  version: "1.0"
+paths:
+  /email/queue:
+    get:
+      consumes:
+      - application/json
+      description: Get all RabbitMQ queues.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: all queues
+          schema:
+            items:
+              $ref: '#/definitions/model.Queue'
+            type: array
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Get queues
+      tags:
+      - queue
+    post:
+      consumes:
+      - application/json
+      description: Create a RabbitMQ queue with DLX.
+      parameters:
+      - description: queue params
+        in: body
+        name: queue
+        required: true
+        schema:
+          $ref: '#/definitions/model.QueuePartial'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: create queue successfully
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "400":
+          description: an invalid queue param was sent
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "403":
+          description: current user is not admin
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "409":
+          description: queue already exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Creating queue
+      tags:
+      - queue
+  /email/queue/{name}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a queue with DLX.
+      parameters:
+      - description: queue name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: queue deleted
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "403":
+          description: current user is not admin
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: queue does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Delete queues
+      tags:
+      - queue
+  /email/queue/{name}/send:
+    post:
+      consumes:
+      - application/json
+      description: Sends an email to the RabbitMQ queue.
+      parameters:
+      - description: queue name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: email
+        in: body
+        name: queue
+        required: true
+        schema:
+          $ref: '#/definitions/model.Email'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: email sent successfully
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "400":
+          description: an invalid email param was sent
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "403":
+          description: current user is not admin
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: queue does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Sends email
+      tags:
+      - queue
+  /email/template:
+    get:
+      consumes:
+      - application/json
+      description: Get all email templates.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: all templates
+          schema:
+            items:
+              $ref: '#/definitions/model.Template'
+            type: array
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Get templates
+      tags:
+      - template
+    post:
+      consumes:
+      - application/json
+      description: Create a email template.
+      parameters:
+      - description: template params
+        in: body
+        name: template
+        required: true
+        schema:
+          $ref: '#/definitions/model.TemplatePartial'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: create template successfully
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "400":
+          description: an invalid template param was sent
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "409":
+          description: template name already exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Creating template
+      tags:
+      - template
+  /email/template/{name}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a email template.
+      parameters:
+      - description: template name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: template deleted
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: template does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Delete template
+      tags:
+      - template
+    get:
+      consumes:
+      - application/json
+      description: Get a email template.
+      parameters:
+      - description: template name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: all templates
+          schema:
+            $ref: '#/definitions/model.Template'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: template does not exist
+          schema:
+            items:
+              $ref: '#/definitions/controllers.sent'
+            type: array
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Get template
+      tags:
+      - template
+    put:
+      consumes:
+      - application/json
+      description: Update a email template.
+      parameters:
+      - description: template name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: template params
+        in: body
+        name: template
+        required: true
+        schema:
+          $ref: '#/definitions/model.TemplatePartial'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: template updated
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "400":
+          description: an invalid template param was sent
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: template does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Update template
+      tags:
+      - template
+  /user:
+    delete:
+      consumes:
+      - application/json
+      description: Delete current user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: user deleted
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "403":
+          description: current user is protected
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: user does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Delete user
+      tags:
+      - user
+    get:
+      consumes:
+      - application/json
+      description: Get current user informations.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: user informations
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: user does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Get user
+      tags:
+      - user
+    post:
+      consumes:
+      - application/json
+      description: Create a user in application.
+      parameters:
+      - description: user params
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/model.UserPartial'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: user created successfully
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "400":
+          description: an invalid user param was sent
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "403":
+          description: current user is not admin
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "409":
+          description: user already exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Create user
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Update user informatios.
+      parameters:
+      - description: user params
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/model.UserPartial'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: user updated
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "400":
+          description: an invalid user param was sent
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: user does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Update user
+      tags:
+      - user
+  /user/admin/{userID}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove the admin role from the user.
+      parameters:
+      - description: user id to be removed from admin role
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: admin role removed
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "400":
+          description: was sent a invalid user ID
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "403":
+          description: current user is not admin
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: user does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Remove admin
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: Create a user admin.
+      parameters:
+      - description: user id to be promoted to admin
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: admin created successfully
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "400":
+          description: was sent a invalid user ID
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "403":
+          description: current user is not admin
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: user does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Create admin
+      tags:
+      - admin
+  /user/admin/{userID}/user:
+    delete:
+      consumes:
+      - application/json
+      description: Delete user by admin.
+      parameters:
+      - description: user id to be deleted
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: user deleted
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "403":
+          description: current user is protected
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: user does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Delete user
+      tags:
+      - admin
+    get:
+      consumes:
+      - application/json
+      description: Get user by admin.
+      parameters:
+      - description: user id
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: user informations
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "403":
+          description: current user is not admin
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: user does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Get user
+      tags:
+      - admin
+  /user/all:
+    get:
+      consumes:
+      - application/json
+      description: Get all users informations.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: user informations
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "403":
+          description: current user is not admin
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Get all users
+      tags:
+      - admin
+  /user/role:
+    delete:
+      consumes:
+      - application/json
+      description: Delete current user roles.
+      parameters:
+      - description: role params
+        in: body
+        name: role
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/model.RolePartial'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: user role deleted successfully
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "400":
+          description: was sent a invalid role params
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "403":
+          description: current user does not have all roles
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: user does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Delete current user roles
+      tags:
+      - role
+      - user
+    get:
+      consumes:
+      - application/json
+      description: Get current user informations.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: roles informations
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: user does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Get user
+      tags:
+      - role
+      - user
+    post:
+      consumes:
+      - application/json
+      description: Create a role.
+      parameters:
+      - description: role params
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/model.RolePartial'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: role created successfully
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "400":
+          description: was sent a invalid role params
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "403":
+          description: current user is not admin
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "409":
+          description: role already exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Create role
+      tags:
+      - role
+      - admin
+  /user/role/{userID}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete user roles.
+      parameters:
+      - description: user id to be deleted
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: role params
+        in: body
+        name: role
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/model.RolePartial'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: user role deleted successfully
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "400":
+          description: was sent a invalid role params
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "403":
+          description: current user does not have all roles
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: user does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Delete user roles
+      tags:
+      - role
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Add user roles.
+      parameters:
+      - description: user id to be promoted
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: role params
+        in: body
+        name: role
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/model.UserRole'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: user role created successfully
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "400":
+          description: was sent a invalid roles params
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "403":
+          description: current user does not have all roles
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: user does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Add roles
+      tags:
+      - role
+      - admin
+  /user/role/{userID}/admin:
+    delete:
+      consumes:
+      - application/json
+      description: Delete user roles by admin.
+      parameters:
+      - description: user id to be deleted
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: role params
+        in: body
+        name: role
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/model.RolePartial'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: user role deleted successfully
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "400":
+          description: was sent a invalid role params
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "403":
+          description: current user does not have all roles
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: user does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Delete user roles by admin
+      tags:
+      - role
+      - admin
+  /user/session:
+    post:
+      consumes:
+      - application/json
+      description: Create a user session and set in the response cookie.
+      parameters:
+      - description: user params
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/model.UserSessionPartial'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: session created successfully
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "400":
+          description: an invalid user param was sent
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: user does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Create session
+      tags:
+      - user
+    put:
+      consumes:
+      - application/json
+      description: Refresh a user session and set in the response cookie.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: user session refreshed successfully
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "401":
+          description: user session has expired
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Refresh session
+      tags:
+      - user
+swagger: "2.0"

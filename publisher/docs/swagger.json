@@ -1,0 +1,1713 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is an api that publishes emails in RabbitMQ.",
+        "title": "Publisher Emails",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/email/queue": {
+            "get": {
+                "description": "Get all RabbitMQ queues.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "queue"
+                ],
+                "summary": "Get queues",
+                "responses": {
+                    "200": {
+                        "description": "all queues",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Queue"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a RabbitMQ queue with DLX.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "queue"
+                ],
+                "summary": "Creating queue",
+                "parameters": [
+                    {
+                        "description": "queue params",
+                        "name": "queue",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.QueuePartial"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "create queue successfully",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "400": {
+                        "description": "an invalid queue param was sent",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "403": {
+                        "description": "current user is not admin",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "409": {
+                        "description": "queue already exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            }
+        },
+        "/email/queue/{name}": {
+            "delete": {
+                "description": "Delete a queue with DLX.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "queue"
+                ],
+                "summary": "Delete queues",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "queue name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "queue deleted",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "403": {
+                        "description": "current user is not admin",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "queue does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            }
+        },
+        "/email/queue/{name}/send": {
+            "post": {
+                "description": "Sends an email to the RabbitMQ queue.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "queue"
+                ],
+                "summary": "Sends email",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "queue name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "email",
+                        "name": "queue",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.Email"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "email sent successfully",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "400": {
+                        "description": "an invalid email param was sent",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "403": {
+                        "description": "current user is not admin",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "queue does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            }
+        },
+        "/email/template": {
+            "get": {
+                "description": "Get all email templates.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "template"
+                ],
+                "summary": "Get templates",
+                "responses": {
+                    "200": {
+                        "description": "all templates",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Template"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a email template.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "template"
+                ],
+                "summary": "Creating template",
+                "parameters": [
+                    {
+                        "description": "template params",
+                        "name": "template",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.TemplatePartial"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "create template successfully",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "400": {
+                        "description": "an invalid template param was sent",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "409": {
+                        "description": "template name already exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            }
+        },
+        "/email/template/{name}": {
+            "get": {
+                "description": "Get a email template.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "template"
+                ],
+                "summary": "Get template",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "template name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "all templates",
+                        "schema": {
+                            "$ref": "#/definitions/model.Template"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "template does not exist",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/controllers.sent"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a email template.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "template"
+                ],
+                "summary": "Update template",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "template name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "template params",
+                        "name": "template",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.TemplatePartial"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "template updated",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "400": {
+                        "description": "an invalid template param was sent",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "template does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a email template.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "template"
+                ],
+                "summary": "Delete template",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "template name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "template deleted",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "template does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            }
+        },
+        "/user": {
+            "get": {
+                "description": "Get current user informations.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get user",
+                "responses": {
+                    "200": {
+                        "description": "user informations",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "user does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update user informatios.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Update user",
+                "parameters": [
+                    {
+                        "description": "user params",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UserPartial"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "user updated",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "400": {
+                        "description": "an invalid user param was sent",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "user does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a user in application.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Create user",
+                "parameters": [
+                    {
+                        "description": "user params",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UserPartial"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "user created successfully",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "400": {
+                        "description": "an invalid user param was sent",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "403": {
+                        "description": "current user is not admin",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "409": {
+                        "description": "user already exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete current user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Delete user",
+                "responses": {
+                    "200": {
+                        "description": "user deleted",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "403": {
+                        "description": "current user is protected",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "user does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/admin/{userID}": {
+            "post": {
+                "description": "Create a user admin.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Create admin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "user id to be promoted to admin",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "admin created successfully",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "400": {
+                        "description": "was sent a invalid user ID",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "403": {
+                        "description": "current user is not admin",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "user does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Remove the admin role from the user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Remove admin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "user id to be removed from admin role",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "admin role removed",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "400": {
+                        "description": "was sent a invalid user ID",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "403": {
+                        "description": "current user is not admin",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "user does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/admin/{userID}/user": {
+            "get": {
+                "description": "Get user by admin.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Get user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "user id",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "user informations",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "403": {
+                        "description": "current user is not admin",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "user does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete user by admin.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Delete user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "user id to be deleted",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "user deleted",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "403": {
+                        "description": "current user is protected",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "user does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/all": {
+            "get": {
+                "description": "Get all users informations.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Get all users",
+                "responses": {
+                    "200": {
+                        "description": "user informations",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "403": {
+                        "description": "current user is not admin",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/role": {
+            "get": {
+                "description": "Get current user informations.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "role",
+                    "user"
+                ],
+                "summary": "Get user",
+                "responses": {
+                    "200": {
+                        "description": "roles informations",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "user does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "role",
+                    "admin"
+                ],
+                "summary": "Create role",
+                "parameters": [
+                    {
+                        "description": "role params",
+                        "name": "role",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RolePartial"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "role created successfully",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "400": {
+                        "description": "was sent a invalid role params",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "403": {
+                        "description": "current user is not admin",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "409": {
+                        "description": "role already exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete current user roles.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "role",
+                    "user"
+                ],
+                "summary": "Delete current user roles",
+                "parameters": [
+                    {
+                        "description": "role params",
+                        "name": "role",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.RolePartial"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "user role deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "400": {
+                        "description": "was sent a invalid role params",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "403": {
+                        "description": "current user does not have all roles",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "user does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/role/{userID}": {
+            "put": {
+                "description": "Add user roles.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "role",
+                    "admin"
+                ],
+                "summary": "Add roles",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "user id to be promoted",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "role params",
+                        "name": "role",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.UserRole"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "user role created successfully",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "400": {
+                        "description": "was sent a invalid roles params",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "403": {
+                        "description": "current user does not have all roles",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "user does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete user roles.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "role",
+                    "admin"
+                ],
+                "summary": "Delete user roles",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "user id to be deleted",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "role params",
+                        "name": "role",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.RolePartial"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "user role deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "400": {
+                        "description": "was sent a invalid role params",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "403": {
+                        "description": "current user does not have all roles",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "user does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/role/{userID}/admin": {
+            "delete": {
+                "description": "Delete user roles by admin.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "role",
+                    "admin"
+                ],
+                "summary": "Delete user roles by admin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "user id to be deleted",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "role params",
+                        "name": "role",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.RolePartial"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "user role deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "400": {
+                        "description": "was sent a invalid role params",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "403": {
+                        "description": "current user does not have all roles",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "user does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/session": {
+            "put": {
+                "description": "Refresh a user session and set in the response cookie.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Refresh session",
+                "responses": {
+                    "200": {
+                        "description": "user session refreshed successfully",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "401": {
+                        "description": "user session has expired",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a user session and set in the response cookie.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Create session",
+                "parameters": [
+                    {
+                        "description": "user params",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UserSessionPartial"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "session created successfully",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "400": {
+                        "description": "an invalid user param was sent",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "user does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "controllers.sent": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Email": {
+            "type": "object",
+            "properties": {
+                "attachments": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "blindReceivers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Receiver"
+                    }
+                },
+                "emailLists": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "receivers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Receiver"
+                    }
+                },
+                "sentAt": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "template": {
+                    "$ref": "#/definitions/model.TemplateData"
+                },
+                "userId": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Queue": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdBy": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "type": "string"
+                },
+                "deletedBy": {
+                    "type": "string"
+                },
+                "dlx": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "maxRetries": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.QueuePartial": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "maxRetries": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Receiver": {
+            "type": "object",
+            "required": [
+                "email",
+                "name"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.RolePartial": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Template": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdBy": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "type": "string"
+                },
+                "deletedBy": {
+                    "type": "string"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "template": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.TemplateData": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.TemplatePartial": {
+            "type": "object",
+            "required": [
+                "name",
+                "template"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "template": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.UserPartial": {
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.UserRole"
+                    }
+                }
+            }
+        },
+        "model.UserRole": {
+            "type": "object",
+            "properties": {
+                "isAdmin": {
+                    "type": "boolean"
+                },
+                "isProtected": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.UserSessionPartial": {
+            "type": "object",
+            "required": [
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

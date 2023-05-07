@@ -1,14 +1,19 @@
 version: '3.9'
 services:
   consumer:
-    build: ./consumer
+    build: 
+      context: ./
+      dockerfile: ./consumer/Dockerfile
     env_file: 
       - ./consumer/.env
-  benchmarking:
-    build: ./benchmarking/
-    env_file:
-      - ./benchmarking/.env
-    entrypoint: /benchmarking
+  publisher:
+    build: 
+      context: ./
+      dockerfile: ./publisher/Dockerfile
+    env_file: 
+      - ./publisher/.env
+    ports:
+      - 8080:8080/tcp
   rabbit:
     image: rabbitmq:3.11-management
     environment:
@@ -33,13 +38,24 @@ services:
       - prometheus:/prometheus
   grafana:
     image: grafana/grafana-oss
+    ports:
+      - 3000:3000/tcp
     volumes:
       - grafana:/var/lib/grafana
-    ports:
-      - 3000:3000
     environment:
       - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=1s
+  database:
+    image: mongo:5
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=mongo
+      - MONGO_INITDB_ROOT_PASSWORD=mongo
+      - MONGO_INITDB_DATABASE=email
+    ports:
+      - 27017:27017/tcp
+    volumes:
+      - database:/data/db
 volumes:
   minio: {}
   prometheus: {}
   grafana: {}
+  database: {}

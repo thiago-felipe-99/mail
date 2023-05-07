@@ -1,12 +1,14 @@
 FROM golang:1.20-alpine AS build
 
 WORKDIR /app
+ 
+COPY ./consumer/go.sum ./
+COPY ./consumer/go.mod ./
+COPY ./rabbit ../rabbit
 
-COPY go.sum ./
-COPY go.mod ./
 RUN go mod download
 
-COPY ./ ./
+COPY ./consumer ./
 
 RUN go build -o /consumer
 

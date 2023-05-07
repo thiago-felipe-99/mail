@@ -15,7 +15,7 @@ import (
 
 var (
 	errMaxEntrySize       = errors.New("entry is to big")
-	errInvalidContentType = errors.New("obeject has a invalid Content Type: %s")
+	errInvalidContentType = errors.New("obeject has a invalid Content Type")
 	errSmallBuffer        = errors.New("unable to get all template")
 )
 
@@ -100,7 +100,7 @@ func (cache *cache) getFileFromMinio(name string) ([]byte, error) {
 	}
 
 	if !validContentType(objectInfo.ContentType, cache.validContentTypes) {
-		return nil, errInvalidContentType
+		return nil, fmt.Errorf("%w, %s", errInvalidContentType, objectInfo.ContentType)
 	}
 
 	if objectInfo.Size > cache.maxEntrySize {
