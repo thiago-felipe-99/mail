@@ -688,6 +688,45 @@ paths:
       summary: Remove emails to email list
       tags:
       - emailList
+  /email/list/{user_id}/{name}/{email_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove emails to email list.
+      parameters:
+      - description: user id from emailist
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: email list name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: email id from emailist
+        in: path
+        name: email_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: update email list successfully
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "404":
+          description: email list does not exist
+          schema:
+            $ref: '#/definitions/controllers.sent'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/controllers.sent'
+      summary: Remove email to email list
+      tags:
+      - emailList
   /email/queue:
     get:
       consumes:

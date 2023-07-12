@@ -661,6 +661,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/email/list/{user_id}/{name}/{email_id}": {
+            "delete": {
+                "description": "Remove emails to email list.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "emailList"
+                ],
+                "summary": "Remove email to email list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "user id from emailist",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "email list name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "email id from emailist",
+                        "name": "email_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "update email list successfully",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "404": {
+                        "description": "email list does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.sent"
+                        }
+                    }
+                }
+            }
+        },
         "/email/queue": {
             "get": {
                 "description": "Get all RabbitMQ queues.",

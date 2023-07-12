@@ -165,7 +165,7 @@ func (core *EmailList) AddEmails(name string, userID model.ID, emails model.Emai
 
 	err = core.database.Update(*emailList)
 	if err != nil {
-		return fmt.Errorf("error adding new emails email list: %w", err)
+		return fmt.Errorf("error adding emails: %w", err)
 	}
 
 	return nil
@@ -186,19 +186,37 @@ func (core *EmailList) RemoveEmails(
 		return err
 	}
 
-	for _, email := range emailList.Emails {
-		del := func(k model.ID, v string) bool {
-			return email == v
-		}
+	emailsAlreadyExist := maps.Values(emailList.Emails)
 
-		if slices.Contains(emails.Emails, email) {
-			maps.DeleteFunc(emailList.Emails, del)
-		}
+	del := func(k model.ID, v string) bool {
+		return slices.Contains(emailsAlreadyExist, v)
 	}
+
+	maps.DeleteFunc(emailList.Emails, del)
 
 	err = core.database.Update(*emailList)
 	if err != nil {
-		return fmt.Errorf("error adding new emails email list: %w", err)
+		return fmt.Errorf("error removing emails: %w", err)
+	}
+
+	return nil
+}
+
+func (core *EmailList) RemoveEmail(name string, userID model.ID, email model.ID) error {
+	emailList, err := core.Get(name, userID)
+	if err != nil {
+		return err
+	}
+
+	del := func(k model.ID, v string) bool {
+		return k == email
+	}
+
+	maps.DeleteFunc(emailList.Emails, del)
+
+	err = core.database.Update(*emailList)
+	if err != nil {
+		return fmt.Errorf("error removing email: %w", err)
 	}
 
 	return nil

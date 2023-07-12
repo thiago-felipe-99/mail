@@ -303,7 +303,7 @@ func (controller *EmailList) addEmail(handler *fiber.Ctx) error { //nolint: dupl
 //	@Param			emails	body		model.EmailListEmails	true	"emails"
 //	@Router			/email/list/{name}/remove [delete]
 //	@Description	Remove emails to email list.
-func (controller *EmailList) removeEmail(handler *fiber.Ctx) error { //nolint: dupl
+func (controller *EmailList) removeEmails(handler *fiber.Ctx) error { //nolint: dupl
 	userID, ok := handler.Locals("userID").(model.ID)
 	if !ok {
 		log.Printf("[ERROR] - error getting user ID")
@@ -326,6 +326,51 @@ func (controller *EmailList) removeEmail(handler *fiber.Ctx) error { //nolint: d
 	unexpectMessageError := "error removing emails"
 
 	okay := okay{"emails removed", fiber.StatusOK}
+
+	return callingCore(
+		funcCore,
+		expectErrors,
+		unexpectMessageError,
+		okay,
+		controller.getTranslator(handler),
+		handler,
+	)
+}
+
+// Remove email to email list.
+//
+//	@Summary		Remove email to email list
+//	@Tags			emailList
+//	@Accept			json
+//	@Produce		json
+//	@Success		200			{object}	sent	"update email list successfully"
+//	@Failure		404			{object}	sent	"email list does not exist"
+//	@Failure		500			{object}	sent	"internal server error"
+//	@Param			user_id		path		string	true	"user id from emailist"
+//	@Param			name		path		string	true	"email list name"
+//	@Param			email_id	path		string	true	"email id from emailist"
+//	@Router			/email/list/{user_id}/{name}/{email_id} [delete]
+//	@Description	Remove emails to email list.
+func (controller *EmailList) removeEmail(handler *fiber.Ctx) error {
+	userID, err := model.ParseID(handler.Params("user_id"))
+	if err != nil {
+		return handler.Status(fiber.StatusNotFound).
+			JSON(sent{core.ErrEmailListDoesNotExist.Error()})
+	}
+
+	emailID, err := model.ParseID(handler.Params("email_id"))
+	if err != nil {
+		return handler.Status(fiber.StatusNotFound).
+			JSON(sent{core.ErrEmailListDoesNotExist.Error()})
+	}
+
+	funcCore := func() error { return controller.core.RemoveEmail(handler.Params("name"), userID, emailID) }
+
+	expectErrors := []expectError{{core.ErrEmailListDoesNotExist, fiber.StatusNotFound}}
+
+	unexpectMessageError := "error removing email"
+
+	okay := okay{"email removed", fiber.StatusOK}
 
 	return callingCore(
 		funcCore,

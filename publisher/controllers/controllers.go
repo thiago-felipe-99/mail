@@ -192,6 +192,7 @@ func CreateHTTPServer(validate *validator.Validate, cores *core.Cores) (*fiber.A
 	}
 
 	app.Post("/user/session", user.newSession)
+	app.Delete("/email/list/:user_id/:name/:email_id", emailList.removeEmail)
 
 	app.Use(user.refreshSession)
 
@@ -219,7 +220,7 @@ func CreateHTTPServer(validate *validator.Validate, cores *core.Cores) (*fiber.A
 	app.Put("/email/list/:name", emailList.updateInfo)
 	app.Delete("/email/list/:name", emailList.delete)
 	app.Post("/email/list/:name/add", emailList.addEmail)
-	app.Delete("/email/list/:name/remove", emailList.removeEmail)
+	app.Delete("/email/list/:name/remove", emailList.removeEmails)
 
 	app.Get("/email/template", template.getByUser)
 	app.Post("/email/template", template.create)
